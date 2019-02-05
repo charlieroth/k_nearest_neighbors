@@ -1,3 +1,10 @@
+"""
+Charles Roth <roth47@purdue.edu>
+CS 408
+HW 01
+02/03/2018
+"""
+
 import math
 import operator
 import sys
