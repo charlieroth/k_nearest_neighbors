@@ -3,27 +3,50 @@ import operator
 import sys
 
 # globals
-num_ops = 0
+ops_min = 0
+ops_max = 0
+num_frds = 0
 plyrs_data = None
 prgm_data = None
 
 
+# writes INVALID INPUT to output.txt
+def invalid_input():
+    out = open('output.txt', 'w')
+    out.write('INVALID INPUT\n')
+    sys.exit()
+
+
 # Reads in the file and shapes the player data and opponent data
 def load_data(filename):
-    global num_frs, num_ops, plyrs_data, prgm_data
+    global num_frds, ops_min, ops_max, plyrs_data, prgm_data
     with open(filename, 'r+') as f:
         plyrs_data = f.read().splitlines()
+        if len(plyrs_data) < 2: 
+            invalid_input()
         for x in range(len(plyrs_data)):
             if x == 0:
                 prgm_data = plyrs_data[x]
                 prgm_data = [int(i) for i in prgm_data.split()]
-                num_ops = prgm_data[2]
+                num_frds = prgm_data[0]
+                ops_min = prgm_data[1]
+                ops_max = prgm_data[2]
+                
+                if ops_min < 1 or ops_max > 1000000000: 
+                    invalid_input()
+                if ops_min > ops_max: 
+                    invalid_input()
+                if num_frds < 1 or num_frds > 50000: 
+                    invalid_input()
             else:
                 plyr = plyrs_data[x].split(' ')
                 plyr[1] = float(plyr[1])
+                if plyr[1] < 1 or plyr[1] > 1000000000: 
+                    invalid_input()
                 plyrs_data[x] = plyr
-
-        plyrs_data.pop(0)  # remove the first line of the array
+        plyrs_data.pop(0)  # remove the program data, only player info left
+        if num_frds != len(plyrs_data):
+            invalid_input()
 
 
 # Computes the euclidean distance between, of the hours played,
@@ -43,11 +66,14 @@ def determine_neighbors(plyrs_data, opp, k):
 
     neighbors = []
     nearest_distance = dists[0][1]
-    for y in range(k):
+    loop_range = k
+    if (len(dists) < k): loop_range = len(dists)
+    for y in range(loop_range):
         # only add distances that are the same as the nearest
         if dists[y][1] == nearest_distance:
             neighbors.append(dists[y][0])
     return neighbors
+
 
 # Classifies whether an opponent has the sword or not
 def classify(neighbors, opp):
@@ -61,53 +87,23 @@ def classify(neighbors, opp):
         prev = neighbors[x]
     return 'NS'
 
-# Returns the percentage of accuracy between the expected
-# results and the predicted ones by the algorithm
-def get_accuracy(expected, predictions):
-    print("Expected: ", expected)
-    correct = 0
-    for x in range(len(expected)):
-        if expected[x][0] == predictions[x][0]:
-            correct += 1
-    return (correct/float(len(expected))) * 100.0
-
 
 def main():
-    if len(sys.argv) > 1:
-        filename = sys.argv[1]
-        load_data(filename)
-    else:
-        print('Usage:')
-        print('python3 main.py <input_file_to_test>')
-        sys.exit()
-
+    load_data('input.txt')
     opp_data = []
-    for i in range(1, num_ops + 1):
+    for i in range(1, ops_max + 1):
         opp_data.append(["", float(i)])
 
     k = 3
-    predictions = []
     count = 0
+    predictions = []
     for x in range(len(opp_data)):
         neighbors = determine_neighbors(plyrs_data, opp_data[x], k)
         classification = classify(neighbors, opp_data[x])
-        if classification == 'S':
+        if classification == 'S': 
             count += 1
         predictions.append([classification, opp_data[x][1]])
-    
     out = open("output.txt", "w")
     out.write(str(count) + '\n')
-    
-    print("Predictions: ", predictions)
-    correctness = get_accuracy([
-        ['S', 1.0],
-        ['S', 2.0],
-        ['NS', 3.0],
-        ['NS', 4.0],
-        ['S', 5.0],
-        ['S', 6.0],
-    ], predictions)
-    print("Correctness: ", correctness)
-
 
 main()
